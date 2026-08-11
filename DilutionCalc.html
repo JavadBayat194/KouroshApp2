@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DilutionCalc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e3c72">
+    <title>DilutionCalc</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231e3c72'/><text y='.9em' font-size='55' x='50%' text-anchor='middle' fill='white'>⚗️</text></svg>">
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: linear-gradient(145deg, #1e3c72, #2a5298);
+            min-height: 100vh; min-height: -webkit-fill-available;
+            display: flex; justify-content: center; align-items: center;
+            margin: 0; padding: 16px; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 26px; padding: 22px 18px; max-width: 460px; width: 100%;
+            box-shadow: 0 25px 50px -8px rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        h1 {
+            font-size: 21px; font-weight: 700; color: #0b2a4a;
+            text-align: center; margin: 0 0 16px 0;
+            border-bottom: 2px solid #e0e7f0; padding-bottom: 10px;
+        }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; color: #1e3a5f; font-size: 13px; margin-bottom: 4px; }
+        select, input {
+            width: 100%; padding: 12px 14px; border: 2px solid #dce3ed;
+            border-radius: 14px; font-size: 16px; background: white;
+            outline: none; color: #0b1e33; -webkit-appearance: none; appearance: none;
+        }
+        select:focus, input:focus { border-color: #2a5298; box-shadow: 0 0 0 4px rgba(42, 82, 152, 0.15); }
+        .btn {
+            width: 100%; padding: 14px; background: linear-gradient(145deg, #1e3c72, #2a5298);
+            color: white; border: none; border-radius: 50px; font-size: 17px; font-weight: 700;
+            margin: 6px 0 10px; box-shadow: 0 8px 20px rgba(42, 82, 152, 0.35);
+        }
+        .btn:active { transform: scale(0.97); }
+        .result-box {
+            background: #eef3f9; border-radius: 16px; padding: 14px 13px;
+            margin-top: 6px; border-left: 6px solid #1e3c72;
+            min-height: 70px; font-size: 14px; line-height: 1.7; color: #0a1f38;
+        }
+        .result-box strong { color: #0b3b6b; }
+        .footer-note { font-size: 11px; color: #4a5e7a; text-align: center; margin-top: 10px; opacity: 0.75; }
+        .highlight { background: #dbe7f5; padding: 7px 11px; border-radius: 11px; display: block; margin-top: 7px; }
+        .big-num { font-size: 17px; color: #1a4f8b; font-weight: 700; }
+        
+        #passwordScreen { display: block; }
+        #appContent { display: none; }
+        .password-box { text-align: center; }
+        .password-box h2 { color: #0b2a4a; margin-bottom: 18px; font-size: 21px; }
+        .error-msg { color: #b91c1c; font-size: 13px; margin-top: 8px; display: none; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Password Screen -->
+    <div id="passwordScreen" class="password-box">
+        <h2>🔒 DilutionCalc</h2>
+        <div class="form-group">
+            <label for="passwordInput">Enter Password:</label>
+            <input type="password" id="passwordInput" placeholder="Password">
+        </div>
+        <button class="btn" id="loginBtn">Unlock</button>
+        <div class="error-msg" id="errorMsg">Wrong password. Try again.</div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContent">
+        <h1>⚗️ DilutionCalc</h1>
+
+        <!-- Calculation Mode -->
+        <div class="form-group">
+            <label for="calcMode">What do you want to calculate?</label>
+            <select id="calcMode">
+                <option value="dilute">1. Dilute Stock to Target</option>
+                <option value="mix">2. Mix Two Solutions</option>
+                <option value="findstock">3. Find Original Stock</option>
+                <option value="finalconc">4. Find Final Concentration</option>
+            </select>
+        </div>
+
+        <!-- Unit Mode -->
+        <div class="form-group">
+            <label for="unitMode">Unit Mode:</label>
+            <select id="unitMode">
+                <option value="percent">Percent (%)</option>
+                <option value="mgL">Concentration (mg/L)</option>
+            </select>
+        </div>
+
+        <!-- ===== Mode 1: Dilute Stock ===== -->
+        <div id="modeDilute">
+            <div class="form-group">
+                <label id="lblStock1" for="stock1">Stock Concentration:</label>
+                <input type="number" id="stock1" step="any" placeholder="e.g. 40" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label id="lblTarget1" for="target1">Desired Final Concentration:</label>
+                <input type="number" id="target1" step="any" placeholder="e.g. 5" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="finalVol1">Final Volume (L):</label>
+                <input type="number" id="finalVol1" step="any" placeholder="e.g. 7500" value="7500" inputmode="decimal">
+            </div>
+        </div>
+
+        <!-- ===== Mode 2: Mix Two Solutions ===== -->
+        <div id="modeMix" class="hidden">
+            <div class="form-group">
+                <label id="lblC1" for="c1">Solution 1 Concentration:</label>
+                <input type="number" id="c1" step="any" placeholder="e.g. 40" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="v1">Volume of Solution 1 (L):</label>
+                <input type="number" id="v1" step="any" placeholder="e.g. 200" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label id="lblC2" for="c2">Solution 2 Concentration:</label>
+                <input type="number" id="c2" step="any" placeholder="e.g. 10" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="v2">Volume of Solution 2 (L):</label>
+                <input type="number" id="v2" step="any" placeholder="e.g. 300" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="finalVol2">Final Tank Volume (L):</label>
+                <input type="number" id="finalVol2" step="any" placeholder="e.g. 7500" value="7500" inputmode="decimal">
+            </div>
+        </div>
+
+        <!-- ===== Mode 3: Find Original Stock ===== -->
+        <div id="modeFindStock" class="hidden">
+            <div class="form-group">
+                <label for="volTaken">Volume of Stock Taken (L):</label>
+                <input type="number" id="volTaken" step="any" placeholder="e.g. 500" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="finalVol3">Final Volume (L):</label>
+                <input type="number" id="finalVol3" step="any" placeholder="e.g. 7500" value="7500" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label id="lblFinalConc3" for="finalConc3">Measured Final Concentration:</label>
+                <input type="number" id="finalConc3" step="any" placeholder="e.g. 5" inputmode="decimal">
+            </div>
+        </div>
+
+        <!-- ===== Mode 4: Find Final Concentration ===== -->
+        <div id="modeFinalConc" class="hidden">
+            <div class="form-group">
+                <label id="lblStock4" for="stock4">Stock Concentration:</label>
+                <input type="number" id="stock4" step="any" placeholder="e.g. 40" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="volTaken4">Volume of Stock Taken (L):</label>
+                <input type="number" id="volTaken4" step="any" placeholder="e.g. 500" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="finalVol4">Final Volume (L):</label>
+                <input type="number" id="finalVol4" step="any" placeholder="e.g. 7500" value="7500" inputmode="decimal">
+            </div>
+        </div>
+
+        <button class="btn" id="calcBtn">⚡ Calculate</button>
+
+        <div class="result-box" id="resultBox">
+            <span style="opacity:0.6;">🔹 Result will appear here</span>
+        </div>
+
+        <div class="footer-note">1% = 10,000 mg/L • All calculations use mass balance</div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const correctPassword = "Om1234";
+    const passwordScreen = document.getElementById('passwordScreen');
+    const appContent = document.getElementById('appContent');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function checkPassword() {
+        if (passwordInput.value === correctPassword) {
+            passwordScreen.style.display = 'none';
+            appContent.style.display = 'block';
+        } else {
+            errorMsg.style.display = 'block';
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+    loginBtn.addEventListener('click', checkPassword);
+    passwordInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); checkPassword(); }
+    });
+
+    // Elements
+    const calcMode = document.getElementById('calcMode');
+    const unitMode = document.getElementById('unitMode');
+    const resultBox = document.getElementById('resultBox');
+
+    const modeDilute = document.getElementById('modeDilute');
+    const modeMix = document.getElementById('modeMix');
+    const modeFindStock = document.getElementById('modeFindStock');
+    const modeFinalConc = document.getElementById('modeFinalConc');
+
+    function updateUI() {
+        const mode = calcMode.value;
+        const isPercent = unitMode.value === 'percent';
+        const unit = isPercent ? '%' : 'mg/L';
+
+        // Show/hide modes
+        modeDilute.classList.toggle('hidden', mode !== 'dilute');
+        modeMix.classList.toggle('hidden', mode !== 'mix');
+        modeFindStock.classList.toggle('hidden', mode !== 'findstock');
+        modeFinalConc.classList.toggle('hidden', mode !== 'finalconc');
+
+        // Update labels
+        document.getElementById('lblStock1').textContent = `Stock Concentration (${unit}):`;
+        document.getElementById('lblTarget1').textContent = `Desired Final Concentration (${unit}):`;
+        document.getElementById('lblC1').textContent = `Solution 1 Concentration (${unit}):`;
+        document.getElementById('lblC2').textContent = `Solution 2 Concentration (${unit}):`;
+        document.getElementById('lblFinalConc3').textContent = `Measured Final Concentration (${unit}):`;
+        document.getElementById('lblStock4').textContent = `Stock Concentration (${unit}):`;
+    }
+
+    calcMode.addEventListener('change', updateUI);
+    unitMode.addEventListener('change', updateUI);
+    updateUI();
+
+    function formatNumber(num) {
+        if (num === 0) return '0';
+        if (Math.abs(num) >= 1000) return num.toFixed(2);
+        if (Math.abs(num) >= 1) return num.toFixed(3);
+        if (Math.abs(num) >= 0.01) return num.toFixed(4);
+        return num.toExponential(3);
+    }
+
+    function calculate() {
+        const mode = calcMode.value;
+        const isPercent = unitMode.value === 'percent';
+        const unit = isPercent ? '%' : 'mg/L';
+
+        try {
+            if (mode === 'dilute') {
+                const stock = parseFloat(document.getElementById('stock1').value);
+                const target = parseFloat(document.getElementById('target1').value);
+                const finalVol = parseFloat(document.getElementById('finalVol1').value);
+
+                if (isNaN(stock) || isNaN(target) || isNaN(finalVol) || stock <= 0 || target <= 0 || finalVol <= 0) {
+                    throw 'Please enter valid positive numbers.';
+                }
+                if (target > stock) throw 'Target cannot be higher than stock.';
+
+                const volNeeded = (target * finalVol) / stock;
+                const water = finalVol - volNeeded;
+
+                resultBox.innerHTML = `
+                    <div><strong>✅ Dilution Result</strong></div>
+                    <div class="highlight">🔸 Take <span class="big-num">${formatNumber(volNeeded)}</span> L of stock</div>
+                    <div class="highlight">🔸 Add water to reach <span class="big-num">${formatNumber(finalVol)}</span> L</div>
+                    <div style="margin-top:8px;font-size:13px;">Water needed: ${formatNumber(water)} L<br>Final: ${target} ${unit}</div>
+                `;
+            }
+            else if (mode === 'mix') {
+                const c1 = parseFloat(document.getElementById('c1').value);
+                const v1 = parseFloat(document.getElementById('v1').value);
+                const c2 = parseFloat(document.getElementById('c2').value);
+                const v2 = parseFloat(document.getElementById('v2').value);
+                const finalVol = parseFloat(document.getElementById('finalVol2').value);
+
+                if ([c1,v1,c2,v2,finalVol].some(v => isNaN(v) || v < 0) || finalVol <= 0) {
+                    throw 'Please enter valid numbers.';
+                }
+                if (v1 + v2 > finalVol) throw 'Sum of the two volumes cannot exceed final tank volume.';
+
+                const totalMass = (c1 * v1) + (c2 * v2);
+                const finalConc = totalMass / finalVol;
+
+                resultBox.innerHTML = `
+                    <div><strong>✅ Mixture Result</strong></div>
+                    <div class="highlight">🔸 Final Concentration: <span class="big-num">${formatNumber(finalConc)}</span> ${unit}</div>
+                    <div style="margin-top:8px;font-size:13px;">
+                        Solution 1: ${v1} L of ${c1} ${unit}<br>
+                        Solution 2: ${v2} L of ${c2} ${unit}<br>
+                        Water added: ${formatNumber(finalVol - v1 - v2)} L
+                    </div>
+                `;
+            }
+            else if (mode === 'findstock') {
+                const volTaken = parseFloat(document.getElementById('volTaken').value);
+                const finalVol = parseFloat(document.getElementById('finalVol3').value);
+                const finalConc = parseFloat(document.getElementById('finalConc3').value);
+
+                if (isNaN(volTaken) || isNaN(finalVol) || isNaN(finalConc) || volTaken <= 0 || finalVol <= 0 || finalConc <= 0) {
+                    throw 'Please enter valid positive numbers.';
+                }
+                if (volTaken > finalVol) throw 'Stock volume cannot be larger than final volume.';
+
+                const originalStock = (finalConc * finalVol) / volTaken;
+
+                resultBox.innerHTML = `
+                    <div><strong>✅ Original Stock Concentration</strong></div>
+                    <div class="highlight">🔸 Stock was: <span class="big-num">${formatNumber(originalStock)}</span> ${unit}</div>
+                    <div style="margin-top:8px;font-size:13px;">
+                        ${volTaken} L of stock diluted to ${finalVol} L<br>
+                        gave ${finalConc} ${unit}
+                    </div>
+                `;
+            }
+            else if (mode === 'finalconc') {
+                const stock = parseFloat(document.getElementById('stock4').value);
+                const volTaken = parseFloat(document.getElementById('volTaken4').value);
+                const finalVol = parseFloat(document.getElementById('finalVol4').value);
+
+                if (isNaN(stock) || isNaN(volTaken) || isNaN(finalVol) || stock <= 0 || volTaken <= 0 || finalVol <= 0) {
+                    throw 'Please enter valid positive numbers.';
+                }
+                if (volTaken > finalVol) throw 'Stock volume cannot be larger than final volume.';
+
+                const finalConc = (stock * volTaken) / finalVol;
+
+                resultBox.innerHTML = `
+                    <div><strong>✅ Final Concentration</strong></div>
+                    <div class="highlight">🔸 Final Concentration: <span class="big-num">${formatNumber(finalConc)}</span> ${unit}</div>
+                    <div style="margin-top:8px;font-size:13px;">
+                        ${volTaken} L of ${stock} ${unit} stock<br>
+                        diluted to ${finalVol} L
+                    </div>
+                `;
+            }
+        } catch (err) {
+            resultBox.innerHTML = `<span style="color:#b91c1c;">⚠️ ${err}</span>`;
+        }
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+
+    document.querySelectorAll('#appContent input, #appContent select').forEach(el => {
+        el.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calculate();
+            }
+        });
+    });
+})();
+</script>
+</body>
+</html>

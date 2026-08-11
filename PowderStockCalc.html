@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PowderStockCalc">
+    <meta name="theme-color" content="#1e3a8a">
+    <title>PowderStockCalc</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: linear-gradient(145deg, #1e3a8a, #1e40af);
+            min-height: 100vh; min-height: -webkit-fill-available;
+            display: flex; justify-content: center; align-items: center;
+            margin: 0; padding: 16px; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 26px; padding: 24px 18px; max-width: 460px; width: 100%;
+            box-shadow: 0 25px 50px -8px rgba(0,0,0,0.45);
+        }
+        h1 { font-size: 22px; font-weight: 700; color: #1e3a8a; text-align: center; margin: 0 0 6px 0; }
+        .subtitle { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 18px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: 600; color: #1e3a5f; font-size: 13px; margin-bottom: 4px; }
+        select, input {
+            width: 100%; padding: 12px 14px; border: 2px solid #dbeafe;
+            border-radius: 14px; font-size: 16px; background: white;
+            outline: none; color: #0f172a; -webkit-appearance: none; appearance: none;
+        }
+        select:focus, input:focus { border-color: #1e40af; box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.15); }
+        .btn {
+            width: 100%; padding: 14px; background: linear-gradient(145deg, #1e3a8a, #1e40af);
+            color: white; border: none; border-radius: 50px; font-size: 17px; font-weight: 700;
+            margin: 8px 0 12px; box-shadow: 0 8px 20px rgba(30, 64, 175, 0.35);
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-small {
+            width: 100%; padding: 10px; background: #3b82f6; color: white;
+            border: none; border-radius: 12px; font-size: 14px; font-weight: 600; margin-top: 6px;
+        }
+        .btn-small:active { transform: scale(0.97); }
+        .result-box {
+            background: #eff6ff; border-radius: 16px; padding: 14px;
+            margin-top: 8px; border-left: 6px solid #1e40af;
+            min-height: 70px; font-size: 14px; line-height: 1.7; color: #1e3a8a;
+        }
+        .highlight { background: #dbeafe; padding: 8px 12px; border-radius: 12px; display: block; margin-top: 8px; }
+        .big-num { font-size: 18px; color: #1e40af; font-weight: 700; }
+        .note { font-size: 11.5px; color: #64748b; text-align: center; margin-top: 12px; line-height: 1.5; }
+        .hidden { display: none !important; }
+        .mw-box {
+            background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 12px;
+            padding: 10px; margin-top: 8px;
+        }
+        .mw-title { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .row { display: flex; gap: 8px; }
+        .row .form-group { flex: 1; margin-bottom: 0; }
+
+        /* Password */
+        #passwordScreen { display: block; }
+        #appContent { display: none; }
+        .password-box { text-align: center; }
+        .password-box h2 { color: #1e3a8a; margin-bottom: 18px; font-size: 22px; }
+        .error-msg { color: #b91c1c; font-size: 13px; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Password Screen -->
+    <div id="passwordScreen" class="password-box">
+        <h2>🔒 PowderStockCalc</h2>
+        <div class="form-group">
+            <label for="passwordInput">Enter Password:</label>
+            <input type="password" id="passwordInput" placeholder="Password">
+        </div>
+        <button class="btn" id="loginBtn">Unlock</button>
+        <div class="error-msg" id="errorMsg">Wrong password. Try again.</div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContent">
+        <h1>⚗️ PowderStockCalc</h1>
+        <div class="subtitle">Prepare stock solutions from pure or impure powders</div>
+
+        <!-- Powder Type -->
+        <div class="form-group">
+            <label for="powderType">Powder Type:</label>
+            <select id="powderType">
+                <option value="pure">Pure Compound (100%)</option>
+                <option value="impure">Impure Powder</option>
+            </select>
+        </div>
+
+        <!-- Pure fields -->
+        <div id="pureFields">
+            <div class="form-group">
+                <label for="targetPercentPure">% of Target Substance in Compound:</label>
+                <input type="number" id="targetPercentPure" step="any" placeholder="e.g. 54.5" inputmode="decimal">
+            </div>
+            <div class="mw-box">
+                <div class="mw-title">Or calculate % from Molecular Weights:</div>
+                <div class="row">
+                    <div class="form-group">
+                        <label style="font-size:11px">MW Target</label>
+                        <input type="number" id="mwTargetPure" step="any" placeholder="e.g. 94.97" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:11px">MW Parent</label>
+                        <input type="number" id="mwParentPure" step="any" placeholder="e.g. 174.18" inputmode="decimal">
+                    </div>
+                </div>
+                <button class="btn-small" onclick="calcPercent('pure')">Calculate %</button>
+            </div>
+        </div>
+
+        <!-- Impure fields -->
+        <div id="impureFields" class="hidden">
+            <div class="form-group">
+                <label for="powderPurity">Powder Purity (%):</label>
+                <input type="number" id="powderPurity" step="any" placeholder="e.g. 65" value="65" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="targetPercentImpure">% of Target Substance in Pure Compound:</label>
+                <input type="number" id="targetPercentImpure" step="any" placeholder="e.g. 71.9" inputmode="decimal">
+            </div>
+            <div class="mw-box">
+                <div class="mw-title">Or calculate % from Molecular Weights:</div>
+                <div class="row">
+                    <div class="form-group">
+                        <label style="font-size:11px">MW Target</label>
+                        <input type="number" id="mwTargetImpure" step="any" placeholder="e.g. 102.9 (2×ClO)" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:11px">MW Parent</label>
+                        <input type="number" id="mwParentImpure" step="any" placeholder="e.g. 142.98" inputmode="decimal">
+                    </div>
+                </div>
+                <button class="btn-small" onclick="calcPercent('impure')">Calculate %</button>
+            </div>
+        </div>
+
+        <!-- Common -->
+        <div class="form-group">
+            <label for="volume">Final Volume (liters):</label>
+            <input type="number" id="volume" step="any" placeholder="e.g. 1000" value="1000" inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+            <label for="concUnit">Desired Concentration Unit:</label>
+            <select id="concUnit">
+                <option value="gL">g/L</option>
+                <option value="percent">%</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label id="lblConc" for="concValue">Desired Concentration (g/L):</label>
+            <input type="number" id="concValue" step="any" placeholder="e.g. 1" value="1" inputmode="decimal">
+        </div>
+
+        <button class="btn" id="calcBtn">⚡ Calculate Powder Needed</button>
+
+        <div class="result-box" id="resultBox">
+            <span style="opacity:0.6;">🔹 Result will appear here</span>
+        </div>
+
+        <div class="note">
+            % = (MW Target ÷ MW Parent) × 100<br>
+            For multiple groups (e.g. 2×ClO) enter total MW of target groups.<br>
+            1% = 10 g/L
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const correctPassword = "Om1234";
+    const passwordScreen = document.getElementById('passwordScreen');
+    const appContent = document.getElementById('appContent');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function checkPassword() {
+        if (passwordInput.value === correctPassword) {
+            passwordScreen.style.display = 'none';
+            appContent.style.display = 'block';
+        } else {
+            errorMsg.style.display = 'block';
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+    loginBtn.addEventListener('click', checkPassword);
+    passwordInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); checkPassword(); }
+    });
+
+    const powderType = document.getElementById('powderType');
+    const pureFields = document.getElementById('pureFields');
+    const impureFields = document.getElementById('impureFields');
+    const concUnit = document.getElementById('concUnit');
+    const lblConc = document.getElementById('lblConc');
+    const resultBox = document.getElementById('resultBox');
+
+    function updateUI() {
+        const isPure = powderType.value === 'pure';
+        pureFields.classList.toggle('hidden', !isPure);
+        impureFields.classList.toggle('hidden', isPure);
+
+        lblConc.textContent = concUnit.value === 'gL' 
+            ? 'Desired Concentration (g/L):' 
+            : 'Desired Concentration (%):';
+    }
+    powderType.addEventListener('change', updateUI);
+    concUnit.addEventListener('change', updateUI);
+    updateUI();
+
+    // Calculate % from MW
+    window.calcPercent = function(mode) {
+        let mwT, mwP, targetInput;
+        if (mode === 'pure') {
+            mwT = parseFloat(document.getElementById('mwTargetPure').value);
+            mwP = parseFloat(document.getElementById('mwParentPure').value);
+            targetInput = document.getElementById('targetPercentPure');
+        } else {
+            mwT = parseFloat(document.getElementById('mwTargetImpure').value);
+            mwP = parseFloat(document.getElementById('mwParentImpure').value);
+            targetInput = document.getElementById('targetPercentImpure');
+        }
+
+        if (isNaN(mwT) || isNaN(mwP) || mwT <= 0 || mwP <= 0) {
+            alert('Please enter valid positive Molecular Weights.');
+            return;
+        }
+        const percent = (mwT / mwP) * 100;
+        targetInput.value = percent.toFixed(3);
+    };
+
+    function formatNum(n) {
+        if (n === 0) return '0';
+        if (Math.abs(n) >= 1000) return n.toFixed(2);
+        if (Math.abs(n) >= 1) return n.toFixed(3);
+        if (Math.abs(n) >= 0.01) return n.toFixed(4);
+        return n.toExponential(3);
+    }
+
+    function calculate() {
+        const isPure = powderType.value === 'pure';
+        const volume = parseFloat(document.getElementById('volume').value);
+        let conc = parseFloat(document.getElementById('concValue').value);
+        const unit = concUnit.value;
+
+        let targetPercent, purity;
+
+        if (isPure) {
+            targetPercent = parseFloat(document.getElementById('targetPercentPure').value);
+            purity = 100;
+        } else {
+            targetPercent = parseFloat(document.getElementById('targetPercentImpure').value);
+            purity = parseFloat(document.getElementById('powderPurity').value);
+        }
+
+        if (isNaN(volume) || volume <= 0 || isNaN(conc) || conc <= 0) {
+            resultBox.innerHTML = '<span style="color:#b91c1c;">⚠️ Enter valid volume and concentration.</span>';
+            return;
+        }
+        if (isNaN(targetPercent) || targetPercent <= 0 || targetPercent > 100) {
+            resultBox.innerHTML = '<span style="color:#b91c1c;">⚠️ Target % must be between 0 and 100.</span>';
+            return;
+        }
+        if (!isPure && (isNaN(purity) || purity <= 0 || purity > 100)) {
+            resultBox.innerHTML = '<span style="color:#b91c1c;">⚠️ Powder purity must be between 0 and 100.</span>';
+            return;
+        }
+
+        const conc_gL = (unit === 'percent') ? conc * 10 : conc;
+        const targetMass = conc_gL * volume;
+        const effectiveFraction = (targetPercent / 100) * (purity / 100);
+        const powderMass_g = targetMass / effectiveFraction;
+        const powderMass_kg = powderMass_g / 1000;
+
+        resultBox.innerHTML = `
+            <div><strong>✅ Powder Required</strong></div>
+            <div class="highlight">🔸 <span class="big-num">${formatNum(powderMass_g)}</span> grams</div>
+            <div class="highlight">🔸 <span class="big-num">${formatNum(powderMass_kg)}</span> kilograms</div>
+            <div style="margin-top:10px; font-size:12.5px; opacity:0.85;">
+                Target mass needed: ${formatNum(targetMass)} g<br>
+                Effective factor: ${(effectiveFraction * 100).toFixed(2)}%<br>
+                ${volume} L → ${conc} ${unit === 'percent' ? '%' : 'g/L'}
+            </div>
+        `;
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    document.querySelectorAll('#appContent input, #appContent select').forEach(el => {
+        el.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); calculate(); }
+        });
+    });
+})();
+</script>
+</body>
+</html>

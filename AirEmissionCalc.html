@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AirEmissionCalc">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<title>AirEmissionCalc</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(145deg,#0f766e,#134e4a);min-height:100vh;margin:0;padding:16px;padding-bottom:env(safe-area-inset-bottom);display:flex;justify-content:center;align-items:flex-start}
+.container{background:rgba(255,255,255,0.97);border-radius:24px;padding:20px 16px;max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.35);margin:10px 0}
+h1{font-size:22px;color:#134e4a;text-align:center;margin:0 0 8px;font-weight:700}
+.subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:18px}
+.section{background:#f0fdfa;border-radius:16px;padding:14px;margin-bottom:16px;border:1px solid #99f6e4}
+.section-title{font-size:15px;font-weight:700;color:#0f766e;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid #99f6e4}
+.form-group{margin-bottom:11px}
+label{display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:3px}
+select,input{width:100%;padding:11px 12px;border:2px solid #cbd5e1;border-radius:12px;font-size:15px;background:#fff;outline:none;color:#0f172a}
+select:focus,input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,0.15)}
+.btn{width:100%;padding:13px;background:linear-gradient(145deg,#0f766e,#134e4a);color:#fff;border:none;border-radius:50px;font-size:16px;font-weight:700;margin-top:6px;box-shadow:0 6px 16px rgba(15,118,110,0.35)}
+.btn:active{transform:scale(0.97)}
+.result{background:#ecfdf5;border-radius:12px;padding:12px;margin-top:10px;border-left:5px solid #0f766e;font-size:13.5px;line-height:1.65;color:#064e3b;min-height:50px}
+.result strong{color:#065f46}
+.highlight{background:#ccfbf1;padding:6px 10px;border-radius:10px;display:block;margin-top:6px}
+.big{font-size:16px;font-weight:700;color:#0f766e}
+.note{font-size:11px;color:#64748b;margin-top:8px;line-height:1.4}
+.hidden{display:none!important}
+.row{display:flex;gap:8px}
+.row .form-group{flex:1}
+.avg-hint{font-size:11px;color:#94a3b8;margin-top:2px;font-style:italic}
+#loginOverlay{position:fixed;inset:0;background:linear-gradient(145deg,#0f766e,#134e4a);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.login-box{background:rgba(255,255,255,0.97);border-radius:24px;padding:28px 22px;max-width:340px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.4);text-align:center}
+.login-box h2{margin:0 0 6px;color:#134e4a;font-size:20px}
+.login-box p{margin:0 0 18px;font-size:13px;color:#64748b}
+.login-box input{margin-bottom:12px;text-align:center;letter-spacing:2px}
+.login-error{color:#b91c1c;font-size:12px;margin-top:8px;min-height:18px}
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-box">
+    <h2>🔒 AirEmissionCalc</h2>
+    <p>Enter password to continue</p>
+    <input type="password" id="pwdInput" placeholder="Password" inputmode="text" autocomplete="current-password">
+    <button class="btn" onclick="checkPassword()">Unlock</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="container" id="app" style="display:none">
+  <h1>🏭 AirEmissionCalc</h1>
+  <div class="subtitle">Stack • Fuel Sulfur • Fuel Combustion (AP-42) • Flow Conversion</div>
+
+  <div class="section">
+    <div class="section-title">1. Stack Gas Emission Rate</div>
+    <div class="form-group">
+      <label>Pollutant</label>
+      <select id="pollutant">
+        <option value="SO2">SO₂</option>
+        <option value="NO2">NO₂</option>
+        <option value="PM">PM</option>
+        <option value="CO">CO</option>
+        <option value="CO2">CO₂</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Concentration Unit</label>
+      <select id="concUnit">
+        <option value="mgNm3">mg/Nm³</option>
+        <option value="mgm3">mg/m³</option>
+        <option value="ppm">ppm</option>
+        <option value="percent">%</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Concentration Value</label>
+      <input type="number" id="concValue" step="any" placeholder="e.g. 200" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Gas Flow Rate Unit</label>
+      <select id="flowUnit">
+        <option value="Nm3s">Nm³/s</option>
+        <option value="Nm3h">Nm³/h</option>
+        <option value="m3s">m³/s</option>
+        <option value="m3h">m³/h</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Gas Flow Rate</label>
+      <input type="number" id="flowValue" step="any" placeholder="e.g. 50" inputmode="decimal">
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Exit Velocity (m/s)</label>
+        <input type="number" id="velocity" step="any" placeholder="optional" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label>Stack Diameter (m)</label>
+        <input type="number" id="diameter" step="any" placeholder="optional" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Gas Temperature</label>
+        <input type="number" id="tempValue" step="any" placeholder="e.g. 150" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label>Temp Unit</label>
+        <select id="tempUnit">
+          <option value="C">°C</option>
+          <option value="K">K</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="calcStack()">⚡ Calculate Emission (g/s)</button>
+    <div class="result" id="stackResult">Result will appear here</div>
+    <div class="note">If flow is empty, velocity + diameter are used to calculate Q = π·(D/2)²·v. For actual m³ the temperature is used for correction when needed.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2. SO₂ from Fuel Sulfur Content</div>
+    <div class="form-group">
+      <label>What to calculate?</label>
+      <select id="sMode" onchange="updateSMode()">
+        <option value="emission">SO₂ Emission (g/s)</option>
+        <option value="sulfur">Sulfur % in Feed</option>
+        <option value="tonnage">Annual Feed (ton/year)</option>
+      </select>
+    </div>
+    <div class="form-group" id="sSulfurGroup">
+      <label>Sulfur in Feed (%)</label>
+      <input type="number" id="sPercent" step="any" placeholder="e.g. 1.5" inputmode="decimal">
+    </div>
+    <div class="form-group" id="sTonGroup">
+      <label>Annual Feed Consumption (ton/year)</label>
+      <input type="number" id="sTon" step="any" placeholder="e.g. 50000" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Sulfur Release to Atmosphere (%)</label>
+      <input type="number" id="sEff" step="any" value="80" placeholder="e.g. 80" inputmode="decimal">
+    </div>
+    <div class="form-group" id="sEmisGroup" class="hidden">
+      <label>Known SO₂ Emission (g/s)</label>
+      <input type="number" id="sKnownEmis" step="any" placeholder="e.g. 25" inputmode="decimal">
+    </div>
+    <button class="btn" onclick="calcSulfur()">⚡ Calculate</button>
+    <div class="result" id="sulfurResult">Result will appear here</div>
+    <div class="note">SO₂ mass = S mass × 2 (from stoichiometry). Year = 31,557,600 seconds.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">3. Fuel Combustion Emissions (AP-42)</div>
+    <div class="form-group">
+      <label>Fuel Type</label>
+      <select id="fuelType" onchange="updateFuelUnit()">
+        <option value="ng">Natural Gas</option>
+        <option value="diesel">Diesel (Gas Oil / Distillate)</option>
+        <option value="gasoline">Gasoline</option>
+        <option value="coal">Coal (Bituminous)</option>
+        <option value="mazut">Mazut / Residual Fuel Oil (No.6)</option>
+      </select>
+    </div>
+    <div class="form-group" id="ngVolumeGroup">
+      <label>Annual Natural Gas Consumption (m³/year)</label>
+      <input type="number" id="ngVolume" step="any" placeholder="e.g. 10000000" inputmode="decimal">
+    </div>
+    <div class="form-group" id="dieselVolumeGroup" class="hidden">
+      <label>Annual Diesel Consumption (L/year)</label>
+      <input type="number" id="dieselVolume" step="any" placeholder="e.g. 5000000" inputmode="decimal">
+    </div>
+    <div class="form-group" id="gasolineVolumeGroup" class="hidden">
+      <label>Annual Gasoline Consumption (L/year)</label>
+      <input type="number" id="gasolineVolume" step="any" placeholder="e.g. 5000000" inputmode="decimal">
+    </div>
+    <div class="form-group" id="coalVolumeGroup" class="hidden">
+      <label>Annual Coal Consumption (ton/year)</label>
+      <input type="number" id="coalVolume" step="any" placeholder="e.g. 50000" inputmode="decimal">
+    </div>
+    <div class="form-group" id="mazutVolumeGroup" class="hidden">
+      <label>Annual Mazut Consumption (L/year)</label>
+      <input type="number" id="mazutVolume" step="any" placeholder="e.g. 5000000" inputmode="decimal">
+    </div>
+    <div class="form-group" id="sulfurInputGroup" class="hidden">
+      <label>Fuel Sulfur Content (wt %)</label>
+      <input type="number" id="fuelSulfur" step="any" value="0.5" inputmode="decimal">
+    </div>
+    <div class="form-group" id="nitrogenInputGroup" class="hidden">
+      <label>Fuel Nitrogen Content (wt %)</label>
+      <input type="number" id="fuelNitrogen" step="any" value="0.3" inputmode="decimal">
+      <div class="avg-hint" id="avgNHint">Average N Content: —</div>
+    </div>
+    <button class="btn" onclick="calcFuel()">⚡ Calculate Emissions (g/s)</button>
+    <div class="result" id="ngResult">Result will appear here</div>
+    <div class="note">
+      NOx = Thermal NOx + Fuel NOx.<br>
+      Natural Gas / Diesel / Gasoline: almost pure Thermal NOx (very low fuel-N).<br>
+      Coal & Mazut: Fuel NOx calculated from N content + typical Thermal contribution.<br>
+      SO₂ factors from AP-42 (38S for coal, 142S diesel, 157S mazut).
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">4. Normal ↔ Actual Flow Conversion</div>
+    <div class="form-group">
+      <label>Direction</label>
+      <select id="flowDir">
+        <option value="NtoA">Normal → Actual</option>
+        <option value="AtoN">Actual → Normal</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Input Flow Value</label>
+      <input type="number" id="convFlow" step="any" placeholder="e.g. 40" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Flow Unit</label>
+      <select id="convFlowUnit">
+        <option value="s">per second</option>
+        <option value="h">per hour</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Gas Temperature</label>
+        <input type="number" id="convTemp" step="any" placeholder="e.g. 180" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label>Unit</label>
+        <select id="convTempUnit">
+          <option value="C">°C</option>
+          <option value="K">K</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Pressure (atm) – default 1</label>
+      <input type="number" id="convP" step="any" value="1" inputmode="decimal">
+    </div>
+    <button class="btn" onclick="calcFlowConv()">⚡ Convert Flow</button>
+    <div class="result" id="flowConvResult">Result will appear here</div>
+    <div class="note">Q_act = Q_norm × (T_act/273.15) × (1/P_act). T in Kelvin.</div>
+  </div>
+</div>
+
+<script>
+const MW = {SO2:64.07, NO2:46.01, CO:28.01, CO2:44.01, PM:1};
+const VM = 22.414;
+const SEC_YEAR = 365.25 * 24 * 3600;
+const LB_TO_G = 453.59237;
+const PASSWORD = 'Om1234';
+
+function toKelvin(val, unit) {
+  return unit === 'C' ? val + 273.15 : val;
+}
+
+function formatNum(n) {
+  if (n === 0) return '0';
+  if (Math.abs(n) >= 1000) return n.toFixed(2);
+  if (Math.abs(n) >= 1) return n.toFixed(3);
+  if (Math.abs(n) >= 0.01) return n.toFixed(4);
+  if (Math.abs(n) >= 0.0001) return n.toFixed(6);
+  return n.toExponential(3);
+}
+
+function checkPassword() {
+  const input = document.getElementById('pwdInput').value;
+  const err = document.getElementById('loginError');
+  if (input === PASSWORD) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem('aircalc_auth', '1');
+  } else {
+    err.textContent = 'Wrong password. Try again.';
+    document.getElementById('pwdInput').value = '';
+    document.getElementById('pwdInput').focus();
+  }
+}
+
+document.getElementById('pwdInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkPassword();
+});
+
+if (sessionStorage.getItem('aircalc_auth') === '1') {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function calcStack() {
+  const pol = document.getElementById('pollutant').value;
+  const concUnit = document.getElementById('concUnit').value;
+  let conc = parseFloat(document.getElementById('concValue').value);
+  const flowUnit = document.getElementById('flowUnit').value;
+  let flow = parseFloat(document.getElementById('flowValue').value);
+  const vel = parseFloat(document.getElementById('velocity').value);
+  const dia = parseFloat(document.getElementById('diameter').value);
+  const tempVal = parseFloat(document.getElementById('tempValue').value);
+  const tempUnit = document.getElementById('tempUnit').value;
+  const res = document.getElementById('stackResult');
+
+  if ((isNaN(flow) || flow <= 0) && !isNaN(vel) && !isNaN(dia) && vel > 0 && dia > 0) {
+    flow = Math.PI * Math.pow(dia/2, 2) * vel;
+  }
+
+  if (isNaN(conc) || conc < 0 || isNaN(flow) || flow <= 0) {
+    res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid concentration and flow (or velocity + diameter).</span>';
+    return;
+  }
+
+  let conc_mgNm3;
+  if (concUnit === 'mgNm3') {
+    conc_mgNm3 = conc;
+  } else if (concUnit === 'mgm3') {
+    const T = !isNaN(tempVal) ? toKelvin(tempVal, tempUnit) : 273.15;
+    conc_mgNm3 = conc * (273.15 / T);
+  } else if (concUnit === 'ppm') {
+    if (pol === 'PM') {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ ppm not applicable for PM.</span>';
+      return;
+    }
+    conc_mgNm3 = conc * MW[pol] / VM;
+  } else if (concUnit === 'percent') {
+    if (pol === 'PM') {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ % not typical for PM.</span>';
+      return;
+    }
+    conc_mgNm3 = conc * 10000 * MW[pol] / VM;
+  }
+
+  let flow_Nm3s;
+  if (flowUnit === 'Nm3s') flow_Nm3s = flow;
+  else if (flowUnit === 'Nm3h') flow_Nm3s = flow / 3600;
+  else if (flowUnit === 'm3s') {
+    const T = !isNaN(tempVal) ? toKelvin(tempVal, tempUnit) : 273.15;
+    flow_Nm3s = flow * (273.15 / T);
+  } else if (flowUnit === 'm3h') {
+    const T = !isNaN(tempVal) ? toKelvin(tempVal, tempUnit) : 273.15;
+    flow_Nm3s = (flow / 3600) * (273.15 / T);
+  }
+
+  const emis_gs = (conc_mgNm3 * flow_Nm3s) / 1000;
+
+  res.innerHTML = `
+    <strong>✅ Emission Rate</strong>
+    <div class="highlight">🔸 <span class="big">${formatNum(emis_gs)}</span> g/s</div>
+    <div style="margin-top:8px;font-size:12px">
+      Conc used: ${formatNum(conc_mgNm3)} mg/Nm³<br>
+      Flow used: ${formatNum(flow_Nm3s)} Nm³/s<br>
+      Pollutant: ${pol}
+    </div>
+  `;
+}
+
+function updateSMode() {
+  const mode = document.getElementById('sMode').value;
+  document.getElementById('sSulfurGroup').classList.toggle('hidden', mode === 'sulfur');
+  document.getElementById('sTonGroup').classList.toggle('hidden', mode === 'tonnage');
+  document.getElementById('sEmisGroup').classList.toggle('hidden', mode === 'emission');
+}
+updateSMode();
+
+function calcSulfur() {
+  const mode = document.getElementById('sMode').value;
+  const sPercent = parseFloat(document.getElementById('sPercent').value);
+  const sTon = parseFloat(document.getElementById('sTon').value);
+  const sEff = parseFloat(document.getElementById('sEff').value);
+  const knownEmis = parseFloat(document.getElementById('sKnownEmis').value);
+  const res = document.getElementById('sulfurResult');
+
+  if (isNaN(sEff) || sEff <= 0 || sEff > 100) {
+    res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid release efficiency (0-100).</span>';
+    return;
+  }
+
+  if (mode === 'emission') {
+    if (isNaN(sPercent) || isNaN(sTon) || sPercent < 0 || sTon <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter sulfur % and tonnage.</span>';
+      return;
+    }
+    const so2_gyear = sTon * 1e6 * (sPercent/100) * 2 * (sEff/100);
+    const so2_gs = so2_gyear / SEC_YEAR;
+    res.innerHTML = `
+      <strong>✅ SO₂ Emission</strong>
+      <div class="highlight">🔸 <span class="big">${formatNum(so2_gs)}</span> g/s</div>
+      <div style="margin-top:6px;font-size:12px">${formatNum(so2_gyear)} g/year</div>
+    `;
+  } else if (mode === 'sulfur') {
+    if (isNaN(knownEmis) || isNaN(sTon) || knownEmis <= 0 || sTon <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter known emission and tonnage.</span>';
+      return;
+    }
+    const sPercentCalc = (knownEmis * SEC_YEAR) / (sTon * 1e6 * 2 * (sEff/100)) * 100;
+    res.innerHTML = `
+      <strong>✅ Sulfur in Feed</strong>
+      <div class="highlight">🔸 <span class="big">${formatNum(sPercentCalc)}</span> %</div>
+    `;
+  } else if (mode === 'tonnage') {
+    if (isNaN(knownEmis) || isNaN(sPercent) || knownEmis <= 0 || sPercent <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter known emission and sulfur %.</span>';
+      return;
+    }
+    const tonCalc = (knownEmis * SEC_YEAR) / (1e6 * (sPercent/100) * 2 * (sEff/100));
+    res.innerHTML = `
+      <strong>✅ Annual Feed Consumption</strong>
+      <div class="highlight">🔸 <span class="big">${formatNum(tonCalc)}</span> ton/year</div>
+    `;
+  }
+}
+
+function updateFuelUnit() {
+  const fuel = document.getElementById('fuelType').value;
+  document.getElementById('ngVolumeGroup').classList.toggle('hidden', fuel !== 'ng');
+  document.getElementById('dieselVolumeGroup').classList.toggle('hidden', fuel !== 'diesel');
+  document.getElementById('gasolineVolumeGroup').classList.toggle('hidden', fuel !== 'gasoline');
+  document.getElementById('coalVolumeGroup').classList.toggle('hidden', fuel !== 'coal');
+  document.getElementById('mazutVolumeGroup').classList.toggle('hidden', fuel !== 'mazut');
+
+  const needsS = (fuel === 'diesel' || fuel === 'mazut' || fuel === 'coal');
+  document.getElementById('sulfurInputGroup').classList.toggle('hidden', !needsS);
+
+  const needsN = (fuel === 'coal' || fuel === 'mazut');
+  document.getElementById('nitrogenInputGroup').classList.toggle('hidden', !needsN);
+
+  const sInput = document.getElementById('fuelSulfur');
+  const nInput = document.getElementById('fuelNitrogen');
+  const hint = document.getElementById('avgNHint');
+
+  if (fuel === 'diesel') {
+    sInput.value = '0.05';
+  } else if (fuel === 'mazut') {
+    sInput.value = '2.5';
+    nInput.value = '0.3';
+    hint.textContent = 'Average N Content: 0.2 – 0.5 % (typical residual oil ≈ 0.3 %)';
+  } else if (fuel === 'coal') {
+    sInput.value = '1.5';
+    nInput.value = '1.5';
+    hint.textContent = 'Average N Content: 1.0 – 2.0 % (typical bituminous ≈ 1.5 %)';
+  }
+}
+
+function calcFuel() {
+  const fuel = document.getElementById('fuelType').value;
+  const res = document.getElementById('ngResult');
+
+  let emis = { CO2: 0, CO: 0, SO2: 0, PM: 0, NOx: 0, ThermalNOx: 0, FuelNOx: 0, Benzene: 0 };
+  let fuelLabel = '';
+  let extraNOxInfo = '';
+
+  if (fuel === 'ng') {
+    const vol_m3y = parseFloat(document.getElementById('ngVolume').value);
+    if (isNaN(vol_m3y) || vol_m3y <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid annual gas volume (m³/year).</span>';
+      return;
+    }
+    const scf_year = vol_m3y / 0.028316846592;
+    const mmscf = scf_year / 1e6;
+
+    const f = {
+      CO2: 120000,
+      CO: 84,
+      SO2: 0.6,
+      PM: 7.6,
+      ThermalNOx: 100,
+      FuelNOx: 0,
+      Benzene: 2.1e-3
+    };
+
+    for (let p in f) {
+      emis[p] = (f[p] * mmscf * LB_TO_G) / SEC_YEAR;
+    }
+    emis.NOx = emis.ThermalNOx + emis.FuelNOx;
+    fuelLabel = 'Natural Gas';
+    extraNOxInfo = 'NOx ≈ 100 % Thermal (very low fuel-N)';
+  }
+  else if (fuel === 'diesel') {
+    const vol_Ly = parseFloat(document.getElementById('dieselVolume').value);
+    if (isNaN(vol_Ly) || vol_Ly <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid annual diesel volume (L/year).</span>';
+      return;
+    }
+    const S = parseFloat(document.getElementById('fuelSulfur').value) || 0.05;
+    const gal_year = vol_Ly / 3.785411784;
+    const kgal = gal_year / 1000;
+
+    const f = {
+      CO2: 22300,
+      CO: 5,
+      SO2: 142 * S,
+      PM: 2,
+      ThermalNOx: 20,
+      FuelNOx: 0,
+      Benzene: 2.4e-4
+    };
+
+    for (let p in f) {
+      emis[p] = (f[p] * kgal * LB_TO_G) / SEC_YEAR;
+    }
+    emis.NOx = emis.ThermalNOx + emis.FuelNOx;
+    fuelLabel = 'Diesel (Distillate Oil)';
+    extraNOxInfo = 'NOx ≈ 100 % Thermal (very low fuel-N)';
+  }
+  else if (fuel === 'gasoline') {
+    const vol_Ly = parseFloat(document.getElementById('gasolineVolume').value);
+    if (isNaN(vol_Ly) || vol_Ly <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid annual gasoline volume (L/year).</span>';
+      return;
+    }
+    const gal_year = vol_Ly / 3.785411784;
+    const kgal = gal_year / 1000;
+
+    const f = {
+      CO2: 19700,
+      CO: 5,
+      SO2: 0.1,
+      PM: 1.5,
+      ThermalNOx: 20,
+      FuelNOx: 0,
+      Benzene: 5e-3
+    };
+
+    for (let p in f) {
+      emis[p] = (f[p] * kgal * LB_TO_G) / SEC_YEAR;
+    }
+    emis.NOx = emis.ThermalNOx + emis.FuelNOx;
+    fuelLabel = 'Gasoline (approx. stationary)';
+    extraNOxInfo = 'NOx ≈ 100 % Thermal (very low fuel-N)';
+  }
+  else if (fuel === 'coal') {
+    const ton = parseFloat(document.getElementById('coalVolume').value);
+    if (isNaN(ton) || ton <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid annual coal consumption (ton/year).</span>';
+      return;
+    }
+    const S = parseFloat(document.getElementById('fuelSulfur').value) || 1.5;
+    const N = parseFloat(document.getElementById('fuelNitrogen').value);
+    if (isNaN(N) || N < 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid Fuel Nitrogen Content (%).</span>';
+      return;
+    }
+
+    const totalTypical = 21.7;
+    const fuelNOx_lb_per_ton = Math.min(5.5 * N, totalTypical * 0.85);
+    const thermalNOx_lb_per_ton = Math.max(totalTypical - fuelNOx_lb_per_ton, 3.0);
+
+    const f = {
+      CO2: 5510,
+      CO: 0.5,
+      SO2: 38 * S,
+      PM: 100,
+      ThermalNOx: thermalNOx_lb_per_ton,
+      FuelNOx: fuelNOx_lb_per_ton,
+      Benzene: 1.3e-4
+    };
+
+    for (let p in f) {
+      emis[p] = (f[p] * ton * LB_TO_G) / SEC_YEAR;
+    }
+    emis.NOx = emis.ThermalNOx + emis.FuelNOx;
+    fuelLabel = 'Coal (Bituminous)';
+    extraNOxInfo = 'Thermal NOx: ' + formatNum(emis.ThermalNOx) + ' g/s<br>Fuel NOx: ' + formatNum(emis.FuelNOx) + ' g/s (from N = ' + N + ' %)';
+  }
+  else if (fuel === 'mazut') {
+    const vol_Ly = parseFloat(document.getElementById('mazutVolume').value);
+    if (isNaN(vol_Ly) || vol_Ly <= 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid annual mazut volume (L/year).</span>';
+      return;
+    }
+    const S = parseFloat(document.getElementById('fuelSulfur').value) || 2.5;
+    const N = parseFloat(document.getElementById('fuelNitrogen').value);
+    if (isNaN(N) || N < 0) {
+      res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter valid Fuel Nitrogen Content (%).</span>';
+      return;
+    }
+
+    const gal_year = vol_Ly / 3.785411784;
+    const kgal = gal_year / 1000;
+
+    const totalNOx_lb = 20.54 + 104.39 * N;
+    const fuelNOx_lb = totalNOx_lb * 0.65;
+    const thermalNOx_lb = totalNOx_lb * 0.35;
+
+    const f = {
+      CO2: 25000,
+      CO: 5,
+      SO2: 157 * S,
+      PM: 9.19 * S + 3.22,
+      ThermalNOx: thermalNOx_lb,
+      FuelNOx: fuelNOx_lb,
+      Benzene: 6.5e-4
+    };
+
+    for (let p in f) {
+      emis[p] = (f[p] * kgal * LB_TO_G) / SEC_YEAR;
+    }
+    emis.NOx = emis.ThermalNOx + emis.FuelNOx;
+    fuelLabel = 'Mazut / Residual Oil (No.6)';
+    extraNOxInfo = 'Thermal NOx: ' + formatNum(emis.ThermalNOx) + ' g/s<br>Fuel NOx: ' + formatNum(emis.FuelNOx) + ' g/s (from N = ' + N + ' %)<br>Total NOx formula: 20.54 + 104.39×N';
+  }
+
+  let html = '<strong>✅ Emissions from ' + fuelLabel + ' (g/s)</strong>';
+  const order = ['CO2', 'CO', 'SO2', 'PM', 'NOx', 'Benzene'];
+  for (let p of order) {
+    if (emis[p] !== undefined) {
+      html += '<div class="highlight">' + p + ': <span class="big">' + formatNum(emis[p]) + '</span></div>';
+    }
+  }
+  if (extraNOxInfo) {
+    html += '<div style="margin-top:10px;font-size:12px;color:#065f46;background:#ecfdf5;padding:8px;border-radius:8px">' + extraNOxInfo + '</div>';
+  }
+  res.innerHTML = html;
+}
+
+function calcFlowConv() {
+  const dir = document.getElementById('flowDir').value;
+  const flow = parseFloat(document.getElementById('convFlow').value);
+  const unit = document.getElementById('convFlowUnit').value;
+  const tempVal = parseFloat(document.getElementById('convTemp').value);
+  const tempUnit = document.getElementById('convTempUnit').value;
+  const P = parseFloat(document.getElementById('convP').value) || 1;
+  const res = document.getElementById('flowConvResult');
+
+  if (isNaN(flow) || flow <= 0 || isNaN(tempVal)) {
+    res.innerHTML = '<span style="color:#b91c1c">⚠️ Enter flow and temperature.</span>';
+    return;
+  }
+
+  const T = toKelvin(tempVal, tempUnit);
+  const Tstd = 273.15;
+
+  let result;
+  if (dir === 'NtoA') {
+    result = flow * (T / Tstd) * (1 / P);
+  } else {
+    result = flow * (Tstd / T) * P;
+  }
+
+  const label = dir === 'NtoA' ? 'Actual Flow' : 'Normal Flow';
+  const per = unit === 's' ? '/s' : '/h';
+
+  res.innerHTML = `
+    <strong>✅ ${label}</strong>
+    <div class="highlight">🔸 <span class="big">${formatNum(result)}</span> m³${per}</div>
+    <div style="margin-top:6px;font-size:12px">T = ${formatNum(T)} K • P = ${P} atm</div>
+  `;
+}
+
+updateFuelUnit();
+</script>
+</body>
+</html>
