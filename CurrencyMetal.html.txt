@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1e293b">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Precious & Currency Calculator</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(145deg,#1e293b,#0f172a);min-height:100vh;margin:0;padding:16px;padding-bottom:env(safe-area-inset-bottom);display:flex;justify-content:center;align-items:flex-start}
+.container{background:rgba(255,255,255,0.96);border-radius:24px;padding:20px 16px;max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.35);margin:10px 0}
+h1{font-size:22px;color:#0f172a;text-align:center;margin:0 0 8px;font-weight:800;letter-spacing:-0.5px}
+.subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:18px}
+.tabs{display:flex;background:#f1f5f9;border-radius:14px;padding:4px;margin-bottom:20px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:10px;font-weight:700;color:#64748b;cursor:pointer;transition:all 0.3s}
+.tab.active{background:#0f172a;color:#fff;box-shadow:0 4px 10px rgba(15,23,42,0.3)}
+.content{display:none}
+.content.active{display:block}
+.section{background:#f8fafc;border-radius:16px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}
+.section-title{font-size:15px;font-weight:700;color:#0f172a;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid #cbd5e1}
+.form-group{margin-bottom:12px}
+label{display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:4px}
+select,input{width:100%;padding:11px 12px;border:2px solid #cbd5e1;border-radius:12px;font-size:15px;background:#fff;outline:none;color:#0f172a;transition:border 0.2s}
+select:focus,input:focus{border-color:#0f766e}
+input[type="number"]{text-align:right;font-variant-numeric:tabular-nums}
+.btn{width:100%;padding:13px;background:linear-gradient(145deg,#0f766e,#134e4a);color:#fff;border:none;border-radius:50px;font-size:16px;font-weight:700;margin-top:8px;box-shadow:0 6px 16px rgba(15,118,110,0.3);cursor:pointer}
+.btn:active{transform:scale(0.97)}
+.result{background:#ecfdf5;border-radius:12px;padding:14px;margin-top:12px;border-left:5px solid #10b981;font-size:13.5px;color:#064e3b;min-height:60px}
+.result strong{color:#065f46;font-size:15px}
+.highlight{background:#ccfbf1;padding:8px 12px;border-radius:10px;display:block;margin-top:8px}
+.big{font-size:20px;font-weight:800;color:#0f766e;text-align:right;direction:ltr}
+.note{font-size:11px;color:#64748b;margin-top:10px;line-height:1.5}
+.error{color:#b91c1c;font-weight:600;margin-top:6px;font-size:13px}
+.divider{height:1px;background:#e2e8f0;margin:16px 0}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>💰 Precious & Currency Calculator</h1>
+  <div class="subtitle">Buy/Sell • Gold • Currency • Profit Calculation</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('currency')">Currency</div>
+    <div class="tab" onclick="switchTab('metal')">Gold & Metals</div>
+  </div>
+
+  <!-- Currency Tab -->
+  <div id="currency" class="content active">
+    <div class="section">
+      <div class="section-title">Currency Exchange</div>
+      
+      <div class="form-group">
+        <label>Select Currency Type</label>
+        <select id="currencyType">
+          <option value="USD">US Dollar (USD $)</option>
+          <option value="EUR">Euro (EUR €)</option>
+          <option value="GBP">British Pound (GBP £)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Action (Buy / Sell)</label>
+        <select id="currencyAction">
+          <option value="buy">Buy (I give money, I get currency)</option>
+          <option value="sell">Sell (I give currency, I get money)</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+      
+      <!-- Calculation A: Amount * Price -->
+      <div class="section-title" style="border-color:#cbd5e1; font-size:14px;">Method 1: Calculate Total Cost</div>
+      <div class="row">
+        <div class="form-group" style="flex:1">
+          <label>Amount to Transact</label>
+          <input type="text" id="curAmount" class="num-input" placeholder="e.g. 100" inputmode="decimal">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Unit Price (per 1)</label>
+          <input type="text" id="curPrice" class="num-input" placeholder="e.g. 60,000" inputmode="decimal">
+        </div>
+      </div>
+      <button class="btn" onclick="calcCurrencyA()">Calculate Total</button>
+      <div class="result" id="curResultA">Enter amount and price.</div>
+
+      <div class="divider"></div>
+
+      <!-- Calculation B: Total Budget / Price -->
+      <div class="section-title" style="border-color:#cbd5e1; font-size:14px;">Method 2: Calculate Amount from Budget</div>
+      <div class="row">
+        <div class="form-group" style="flex:1">
+          <label>Total Budget / Money</label>
+          <input type="text" id="curBudget" class="num-input" placeholder="e.g. 5,000" inputmode="decimal">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Unit Price (per 1)</label>
+          <input type="text" id="curPrice2" class="num-input" placeholder="e.g. 60,000" inputmode="decimal">
+        </div>
+      </div>
+      <button class="btn" onclick="calcCurrencyB()">Calculate Amount</button>
+      <div class="result" id="curResultB">Enter budget and price.</div>
+
+      <div class="note">Currency calculations do not include broker fees or market spread.</div>
+    </div>
+  </div>
+
+  <!-- Gold & Metals Tab -->
+  <div id="metal" class="content">
+    <div class="section">
+      <div class="section-title">Precious Metals (Gold/Silver)</div>
+      
+      <div class="form-group">
+        <label>Select Metal</label>
+        <select id="metalType">
+          <option value="gold">Gold (Au)</option>
+          <option value="silver">Silver (Ag)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Action (Buy / Sell)</label>
+        <select id="metalAction">
+          <option value="buy">Buy</option>
+          <option value="sell">Sell</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Buy Mode -->
+      <div id="buyMode">
+        <div class="section-title" style="border-color:#cbd5e1; font-size:14px;">Buy Calculation</div>
+        
+        <div class="row">
+          <div class="form-group" style="flex:1">
+            <label>Weight (grams)</label>
+            <input type="text" id="buyWeight" class="num-input" placeholder="e.g. 10" inputmode="decimal">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Raw Price Per Gram</label>
+            <input type="text" id="buyRawPrice" class="num-input" placeholder="e.g. 1,200" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="form-group" style="flex:1">
+            <label>Dealer Profit (%)</label>
+            <input type="text" id="buyDealerProfit" class="num-input" placeholder="e.g. 5" value="5" inputmode="decimal">
+          </div>
+        </div>
+
+        <button class="btn" onclick="calcBuyMetal()">Calculate Buy Price</button>
+        
+        <!-- Results for Buy -->
+        <div class="result" id="buyResult">
+          Enter buy details.
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- User Expected Profit on Sell -->
+        <div class="section-title" style="border-color:#cbd5e1; font-size:14px;">Target Profit on Selling (Optional)</div>
+        <div class="form-group">
+          <label>Your Expected Profit (%)</label>
+          <input type="text" id="userProfit" class="num-input" placeholder="e.g. 10" inputmode="decimal">
+        </div>
+        <button class="btn" onclick="calcSellTarget()">Calculate Required Sell Price</button>
+        <div class="result" id="sellTargetResult">
+          Enter your expected profit to see target price.
+        </div>
+      </div>
+
+      <!-- Sell Mode -->
+      <div id="sellMode" style="display:none;">
+        <div class="section-title" style="border-color:#cbd5e1; font-size:14px;">Sell Calculation</div>
+        
+        <div class="row">
+          <div class="form-group" style="flex:1">
+            <label>Weight (grams)</label>
+            <input type="text" id="sellWeight" class="num-input" placeholder="e.g. 10" inputmode="decimal">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Buy Price Per Gram</label>
+            <input type="text" id="sellBuyPrice" class="num-input" placeholder="e.g. 1,100" inputmode="decimal">
+          </div>
+        </div>
+
+        <button class="btn" onclick="calcSellMetal()">Calculate Sell Value</button>
+        <div class="result" id="sellResult">
+          Enter sell details.
+        </div>
+      </div>
+
+      <div class="note">Gold 18k, 21k, 24k: calculator works for any purity. The dealer profit percentage is added to the raw price for Buy, and is usually not subtracted when selling (but your local market rules may vary).</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Format numbers with thousand separators while typing */
+document.querySelectorAll('.num-input').forEach(input => {
+  input.addEventListener('input', function(e) {
+    // Remove all non-numeric characters except dot (for decimal)
+    let raw = this.value.replace(/[^\d.]/g, '');
+    
+    // Prevent multiple dots
+    if ((raw.match(/\./g) || []).length > 1) {
+      raw = raw.slice(0, -1);
+    }
+    
+    // Split integer and decimal parts
+    let parts = raw.split('.');
+    let intPart = parts[0];
+    let decPart = parts.length > 1 ? '.' + parts[1] : '';
+    
+    // Add thousand separators to integer part
+    if (intPart) {
+      intPart = parseInt(intPart, 10).toLocaleString('en-US');
+    }
+    
+    // Reassemble
+    this.value = intPart + decPart;
+  });
+});
+
+function getNum(id) {
+  const val = document.getElementById(id).value;
+  if (!val) return NaN;
+  // Remove commas for calculation
+  return parseFloat(val.replace(/,/g, ''));
+}
+
+function formatNum(n) {
+  if (isNaN(n)) return '—';
+  if (n === 0) return '0';
+  if (Math.abs(n) >= 1000) return n.toLocaleString('en-US', {maximumFractionDigits: 0});
+  if (Math.abs(n) >= 1) return n.toLocaleString('en-US', {maximumFractionDigits: 2});
+  if (Math.abs(n) >= 0.01) return n.toLocaleString('en-US', {maximumFractionDigits: 4});
+  return n.toExponential(4);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  
+  if (tab === 'currency') {
+    document.getElementById('currency').classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.add('active');
+  } else {
+    document.getElementById('metal').classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.add('active');
+  }
+}
+
+/* CURRENCY CALCULATIONS */
+function calcCurrencyA() {
+  const amount = getNum('curAmount');
+  const price = getNum('curPrice');
+  const type = document.getElementById('currencyType').value;
+  const action = document.getElementById('currencyAction').value;
+  const res = document.getElementById('curResultA');
+
+  if (isNaN(amount) || amount <= 0 || isNaN(price) || price <= 0) {
+    res.innerHTML = '<span class="error">Please enter valid amount and price.</span>';
+    return;
+  }
+
+  const total = amount * price;
+  const symbol = type === 'USD' ? '$' : (type === 'EUR' ? '€' : '£');
+
+  let html = `<strong>✅ Total ${action === 'buy' ? 'Cost' : 'Revenue'}</strong>`;
+  html += `<div class="highlight">🔸 <span class="big">${formatNum(total)}</span> ${symbol === '€' ? 'EUR' : (symbol === '£' ? 'GBP' : 'USD')}</div>`;
+  html += `<div style="margin-top:5px;font-size:12px">${formatNum(amount)} units × ${formatNum(price)} ${symbol} = ${formatNum(total)} ${symbol}</div>`;
+  
+  res.innerHTML = html;
+}
+
+function calcCurrencyB() {
+  const budget = getNum('curBudget');
+  const price = getNum('curPrice2');
+  const res = document.getElementById('curResultB');
+
+  if (isNaN(budget) || budget <= 0 || isNaN(price) || price <= 0) {
+    res.innerHTML = '<span class="error">Please enter valid budget and price.</span>';
+    return;
+  }
+
+  const units = budget / price;
+  
+  let html = `<strong>✅ Units You Can Buy</strong>`;
+  html += `<div class="highlight">🔸 <span class="big">${formatNum(units)}</span> units</div>`;
+  html += `<div style="margin-top:5px;font-size:12px">${formatNum(budget)} budget ÷ ${formatNum(price)} unit price = ${formatNum(units)}</div>`;
+  
+  res.innerHTML = html;
+}
+
+/* METAL CALCULATIONS */
+function calcBuyMetal() {
+  const weight = getNum('buyWeight');
+  const rawPrice = getNum('buyRawPrice');
+  const profit = getNum('buyDealerProfit');
+  const res = document.getElementById('buyResult');
+
+  if (isNaN(weight) || weight <= 0 || isNaN(rawPrice) || rawPrice <= 0 || isNaN(profit) || profit < 0) {
+    res.innerHTML = '<span class="error">Please enter valid weight, price, and profit %.</span>';
+    return;
+  }
+
+  const pricePerGram = rawPrice * (1 + (profit / 100));
+  const totalPrice = weight * pricePerGram;
+
+  let html = `<strong>✅ Buy Price Calculation</strong>`;
+  html += `<div class="highlight">💎 Price per gram (with dealer profit): <span class="big">${formatNum(pricePerGram)}</span> P/g</div>`;
+  html += `<div class="highlight">📦 Total Price: <span class="big">${formatNum(totalPrice)}</span> P</div>`;
+  html += `<div style="margin-top:8px;font-size:12px;color:#064e3b">Raw Price: ${formatNum(rawPrice)} P/g<br>Dealer Profit: ${formatNum(profit)}%</div>`;
+  
+  res.innerHTML = html;
+}
+
+function calcSellTarget() {
+  const weight = getNum('buyWeight');
+  const rawPrice = getNum('buyRawPrice');
+  const dealerProfit = getNum('buyDealerProfit');
+  const userProfit = getNum('userProfit');
+  const res = document.getElementById('sellTargetResult');
+
+  if (isNaN(weight) || weight <= 0 || isNaN(rawPrice) || rawPrice <= 0 || isNaN(dealerProfit) || isNaN(userProfit) || userProfit < 0) {
+    res.innerHTML = '<span class="error">Please fill all fields above (weight, raw price) and valid expected profit %.</span>';
+    return;
+  }
+
+  const currentBuyPrice = rawPrice * (1 + (dealerProfit / 100));
+  const targetSellPrice = currentBuyPrice * (1 + (userProfit / 100));
+  const targetTotal = targetSellPrice * weight;
+  
+  const profitAmount = targetTotal - (currentBuyPrice * weight);
+
+  let html = `<strong>🎯 Required Sell Price for ${formatNum(userProfit)}% Profit</strong>`;
+  html += `<div class="highlight">📈 Sell per gram: <span class="big">${formatNum(targetSellPrice)}</span> P/g</div>`;
+  html += `<div class="highlight">💰 Total Sell Price: <span class="big">${formatNum(targetTotal)}</span> P</div>`;
+  html += `<div style="margin-top:8px;font-size:12px;color:#064e3b">Profit Amount: ${formatNum(profitAmount)} P<br>Your Current Buy Price: ${formatNum(currentBuyPrice)} P/g</div>`;
+  
+  res.innerHTML = html;
+}
+
+function calcSellMetal() {
+  const weight = getNum('sellWeight');
+  const buyPrice = getNum('sellBuyPrice');
+  const res = document.getElementById('sellResult');
+
+  if (isNaN(weight) || weight <= 0 || isNaN(buyPrice) || buyPrice <= 0) {
+    res.innerHTML = '<span class="error">Please enter valid weight and buy price.</span>';
+    return;
+  }
+
+  const total = weight * buyPrice;
+
+  let html = `<strong>✅ Sell Revenue Calculation</strong>`;
+  html += `<div class="highlight">💰 Total Sale Value: <span class="big">${formatNum(total)}</span> P</div>`;
+  html += `<div style="margin-top:5px;font-size:12px">${formatNum(weight)} g × ${formatNum(buyPrice)} P/g = ${formatNum(total)} P</div>`;
+  
+  res.innerHTML = html;
+}
+
+/* Show/Hide Buy vs Sell on metal tab */
+document.getElementById('metalAction').addEventListener('change', function() {
+  const mode = this.value;
+  document.getElementById('buyMode').style.display = (mode === 'buy') ? 'block' : 'none';
+  document.getElementById('sellMode').style.display = (mode === 'sell') ? 'block' : 'none';
+  
+  if (mode === 'sell') {
+    document.getElementById('sellResult').innerHTML = 'Enter sell details.';
+  } else {
+    document.getElementById('buyResult').innerHTML = 'Enter buy details.';
+  }
+});
+</script>
+</body>
+</html>
